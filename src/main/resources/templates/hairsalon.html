@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Frizerski salon</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        .navbar {
+            background-color: #343a40;
+        }
+        .navbar-brand {
+            font-size: 1.5rem;
+            color: #fff;
+        }
+        .nav-link {
+            color: #fff;
+        }
+        .form-container {
+            border: 1px solid #ccc;
+            padding: 20px;
+            border-radius: 10px;
+            background-color: #f9f9f9;
+            margin-bottom: 30px;
+        }
+        .form-group label {
+            font-weight: bold;
+        }
+        .edit-form {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark fixed-top">
+    <div class="container">
+        <a class="navbar-brand" href="#">DIVA</a>
+        <div class="ml-auto">
+            <!-- Logout Form -->
+            <form id="logoutForm" th:action="@{/logout}" method="post" style="display: none;">
+                <input type="hidden" value="$Logout">
+            </form>
+            <!-- Logout Link -->
+            <a class="nav-link" href="#" onclick="document.getElementById('logoutForm').submit();">Odjavi se</a>
+        </div>
+    </div>
+</nav>
+<div class="container">
+    <h1>Frizerski salon "Diva"</h1>
+
+    <div class="form-container">
+        <h2>Dodaj novu uslugu</h2>
+        <form th:action="@{/hair_services/add}" th:object="${hairService}" method="post">
+            <div class="form-group">
+                <label for="serviceName">Usluga</label>
+                <input type="text" th:field="*{serviceName}" class="form-control" id="serviceName">
+                <div th:if="${#fields.hasErrors('serviceName')}" th:errors="*{serviceName}" class="text-danger"></div>
+            </div>
+            <div class="form-group">
+                <label for="description">Opis usluge</label>
+                <input type="text" th:field="*{description}" class="form-control" id="description">
+                <div th:if="${#fields.hasErrors('description')}" th:errors="*{description}" class="text-danger"></div>
+            </div>
+            <div class="form-group">
+                <label for="price">Cijena</label>
+                <input type="number" th:field="*{price}" class="form-control" id="price" step="0.01">
+                <div th:if="${#fields.hasErrors('price')}" th:errors="*{price}" class="text-danger"></div>
+            </div>
+            <button type="submit" class="btn btn-primary">Dodaj uslugu</button>
+        </form>
+    </div>
+
+    <div class="row">
+        <div th:each="hairServiceDB : ${hair_services}" class="col-sm-6 col-md-4 col-lg-3">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="view-mode">
+                        <h5 class="card-title" th:text="${hairServiceDB.serviceName}">Naziv usluge</h5>
+                        <p class="card-text" th:text="${hairServiceDB.description}">Opis</p>
+                        <p class="card-text">
+                            <small class="text-muted">Cijena: <span th:text="${hairServiceDB.price}">0.00</span><span class="text-muted"> KM</span></small>
+                        </p>
+                        <button class="btn btn-primary"
+                                th:data-service-name="${hairServiceDB.getServiceName()}"
+                                th:data-description="${hairServiceDB.getDescription()}"
+                                th:data-price="${hairServiceDB.getPrice()}" onclick="showEditForm(this)">Uredi</button>
+                        <form th:action="@{/hair_services/delete/{id}(id=${hairServiceDB.getId()})}" method="post" style="display:inline;">
+                            <button type="submit" class="btn btn-danger" onclick="return confirm('Jeste li sigurni da želite izbrisati ovu uslugu?')">Izbriši</button>
+                        </form>
+                    </div>
+
+                    <div class="edit-form" id="edit-form-${hairServiceDB.id}">
+                        <form th:action="@{/hair_services/edit/{id}(id=${hairServiceDB.getId()})}" th:object="${hairService}" method="post">
+                            <div class="form-group">
+                                <label for="editServiceName">Usluga</label>
+                                <input type="text" th:field="*{serviceName}" class="form-control" id="editServiceName">
+                                <div th:if="${#fields.hasErrors('serviceName')}" th:errors="*{serviceName}" class="text-danger"></div>
+                            </div>
+                            <div class="form-group">
+                                <label for="editDescription">Opis usluge</label>
+                                <input type="text" th:field="*{description}" class="form-control" id="editDescription">
+                                <div th:if="${#fields.hasErrors('description')}" th:errors="*{description}" class="text-danger"></div>
+                            </div>
+                            <div class="form-group">
+                                <label for="editPrice">Cijena</label>
+                                <input type="number" th:field="*{price}" class="form-control" id="editPrice" step="0.01">
+                                <div th:if="${#fields.hasErrors('price')}" th:errors="*{price}" class="text-danger"></div>
+                            </div>
+                            <button type="submit" class="btn btn-success">Spremi</button>
+                            <button type="button" class="btn btn-secondary" onclick="hideEditForm(this)">Odustani</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function showEditForm(button) {
+        const card = button.closest('.card');
+        const editForm = card.querySelector('.edit-form');
+        const viewMode = card.querySelector('.view-mode');
+        const serviceName = button.getAttribute('data-service-name');
+        const description = button.getAttribute('data-description');
+        const price = button.getAttribute('data-price');
+
+        // Fill the form with existing values
+        const form = editForm.querySelector('form');
+        form.querySelector('#editServiceName').value = serviceName;
+        form.querySelector('#editDescription').value = description;
+        form.querySelector('#editPrice').value = price;
+
+        viewMode.style.display = 'none';
+        editForm.style.display = 'block';
+    }
+
+    function hideEditForm(button) {
+        const card = button.closest('.card');
+        const editForm = card.querySelector('.edit-form');
+        const viewMode = card.querySelector('.view-mode');
+        viewMode.style.display = 'block';
+        editForm.style.display = 'none';
+    }
+</script>
+
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>
